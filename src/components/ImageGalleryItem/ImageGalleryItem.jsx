@@ -1,6 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import './ImageGalleryItem.css';
+
 const ImageGalleryItem = ({ hit, selectImg }) => {
   // console.log(hit);
   const { webformatURL, tags, largeImageURL } = hit;
