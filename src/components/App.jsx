@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import { useEffect, useState } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
 import Searchbar from './Searchbar/Searchbar';
 import ImageGallery from './ImageGallery/ImageGallery';
@@ -8,29 +8,22 @@ import Modal from './Modal/Modal';
 import Loader from './Loader/Loader';
 import getImages from '../services/Api';
 
-export class App extends Component {
-  state = {
-    searchInput: '',
-    hits: [],
-    error: null,
-    isLoading: false,
-    page: 1,
-    showModal: false,
-    selectedImage: '',
-    total: 0,
-  };
+export function App() {
+  const [searchInput, setSearchInput] = useState('');
+  const [hits, setHits] = useState([]);
+  const [error, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [selectedImage, setSelectedImage] = useState('');
+  const [total, setTotal] = useState(0);
 
-  async componentDidUpdate(_, prevState) {
-    const prevQuery = prevState.searchInput;
-    const nextQuery = this.state.searchInput;
-    const { page } = this.state;
-
-    // Обов'язково зробити перевірку, щоб не зациклити компонент
-    if (prevQuery !== nextQuery || prevState.page !== page) {
-      this.setState({ isLoading: true, error: null });
+  useEffect(() => {
+    async function Fetch(searchInput, page) {
+      setIsLoading(true);
+      setError(null);
       try {
         // Запит на бекенд
-        const imagesData = await getImages(nextQuery, page);
+        const imagesData = await getImages(searchInput, page);
         const { hits, totalHits } = imagesData;
 
         // Перевірка чи є результати пошуку
@@ -50,92 +43,81 @@ export class App extends Component {
         );
 
         // Записуємо дані у стейт
-        this.setState(prevState => ({
-          hits: [...prevState.hits, ...filteredData],
-          total: totalHits,
-        }));
+        setHits(prevHits => [...prevHits, ...filteredData]);
+        setTotal(totalHits);
 
         // Показуємо кількість результатів при першому запиті
         if (page === 1) {
           toast.success(`Знайдено ${totalHits} результатів`);
         }
       } catch (error) {
-        this.setState({ error: 'Щось пішло не так, перезавантажте сторінку' });
+        setError('Щось пішло не так, перезавантажте сторінку');
       } finally {
-        this.setState({ isLoading: false });
+        setIsLoading(false);
       }
     }
-  }
+    if (searchInput !== '') {
+      Fetch(searchInput, page);
+    }
+  }, [searchInput, page]);
 
-  onSubmit = inputData => {
-    // console.log(inputData);
-    if (this.state.searchInput === inputData) {
+  const onSubmit = inputData => {
+    if (searchInput === inputData) {
       toast.error(`Проявляйте креатив, пришіть різні запити`);
       return;
     }
-    this.setState({
-      searchInput: inputData,
-      hits: [],
-      page: 1,
-    });
+    setSearchInput(inputData);
+    setHits([]);
+    setPage(1);
   };
 
-  loadMore = () => {
-    this.setState(prevState => ({
-      page: prevState.page + 1,
-    }));
-    // console.log(this.state.page);
+  const closeModal = () => {
+    setSelectedImage(null);
   };
 
-  toggleModal = () => {
-    this.setState(({ showModal }) => ({ showModal: !showModal }));
-    // console.log(this.state.showModal);
+  const setActiveImage = urlBigImage => {
+    setSelectedImage(urlBigImage);
   };
 
-  setActiveImage = urlBigImage => {
-    this.setState({ selectedImage: urlBigImage });
-    this.toggleModal();
+  const loadMore = () => {
+    setPage(prevPage => prevPage + 1);
+    console.log(page);
   };
 
-  render() {
-    const { hits, isLoading, showModal, selectedImage, total, error } =
-      this.state;
-    return (
-      <div className="App">
-        <Searchbar onSubmit={this.onSubmit} />
+  return (
+    <div className="App">
+      <Searchbar onSubmit={onSubmit} />
 
-        {hits.length > 0 && (
-          <ImageGallery hits={hits} selectImg={this.setActiveImage} />
-        )}
-        {isLoading && <Loader />}
+      {hits.length > 0 && (
+        <ImageGallery hits={hits} selectImg={setActiveImage} />
+      )}
+      {isLoading && <Loader />}
 
-        {!isLoading && hits.length > 0 && total > hits.length && (
-          <Button loadMore={this.loadMore} />
-        )}
-        {showModal && (
-          <Modal onClose={this.toggleModal} showModal={showModal}>
-            {selectedImage && <img src={selectedImage} alt="" />}
-            {/* <img src={selectedImage} alt="" /> */}
-          </Modal>
-        )}
-        <Toaster
-          position="top-right"
-          toastOptions={{
-            success: {
-              style: {
-                background: 'rgba(255, 255, 255, 0.8)',
-              },
+      {!isLoading && hits.length > 0 && total > hits.length && (
+        <Button loadMore={loadMore} />
+      )}
+      {selectedImage && (
+        <Modal onClose={closeModal}>
+          {selectedImage && <img src={selectedImage} alt="" />}
+        </Modal>
+      )}
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          success: {
+            style: {
+              background: 'rgba(255, 255, 255, 0.8)',
             },
-            error: {
-              style: {
-                color: 'black',
-                background: 'rgba(255, 255, 255, 0.8)',
-              },
+          },
+          error: {
+            style: {
+              color: 'black',
+              background: 'rgba(255, 255, 255, 0.8)',
             },
-          }}
-        />
-        {error && <h2>{error}</h2>}
-      </div>
-    );
-  }
+          },
+        }}
+      />
+      {error && <h2>{error}</h2>}
+    </div>
+  );
 }

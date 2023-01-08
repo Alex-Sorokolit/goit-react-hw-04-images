@@ -5,7 +5,7 @@ import { CgClose } from 'react-icons/cg';
 import { createPortal } from 'react-dom';
 const modalRoot = document.querySelector('#modal_root');
 
-export default function Modal({ onClose, children, showModal }) {
+export default function Modal({ onClose, children }) {
   useEffect(() => {
     const handleKeyDown = event => {
       console.log(event.code);
