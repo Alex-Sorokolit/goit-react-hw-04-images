@@ -89,6 +89,7 @@ export class App extends Component {
 
   toggleModal = () => {
     this.setState(({ showModal }) => ({ showModal: !showModal }));
+    // console.log(this.state.showModal);
   };
 
   setActiveImage = urlBigImage => {
@@ -112,7 +113,7 @@ export class App extends Component {
           <Button loadMore={this.loadMore} />
         )}
         {showModal && (
-          <Modal onClose={this.toggleModal}>
+          <Modal onClose={this.toggleModal} showModal={showModal}>
             {selectedImage && <img src={selectedImage} alt="" />}
             {/* <img src={selectedImage} alt="" /> */}
           </Modal>
